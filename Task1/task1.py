@@ -6,7 +6,7 @@ import os
 import pprint
 from Core.Logger import logger
 from Core.common_functions import call_subprocess as sh
-from Core.common_functions import parse_script_commandline_arguments as parse_args
+from helper_functions import parse_script_commandline_arguments as parse_args
 from Core.SSH import Host
 
 FILES_TO_CLEATE = 10
@@ -40,16 +40,15 @@ def check_disk(args):
         if remote_SSH_host.ssh_connect():
             mount_point = patitions_available[0].split()[-1]
             mount_point = mount_point[:-1] if mount_point[-1] == '/' else mount_point
-            for i in range(FILES_TO_CLEATE):
+            for i in range(args.files):
                 cmd = "sudo mkdir -p {mount_point}/somedir ".format(mount_point=mount_point, i=i)
                 cmd += "&& sudo chown -R {user} {mount_point}/somedir ".format(user=args.user, mount_point=mount_point, i=i)
                 cmd += "&& touch {mount_point}/somedir/{i} ".format(mount_point=mount_point, i=i)
-                cmd += "&& dd if=/dev/zero bs=5242880 count=1 >> {mount_point}/somedir/{i} ".format(mount_point=mount_point, i=i)
+                cmd += "&& dd if=/dev/zero bs={file_size}M count=1 >> {mount_point}/somedir/{i} ".format(mount_point=mount_point,
+                                                                                                         i=i,
+                                                                                                         file_size=args.file_size)
                 cmd_result = remote_SSH_host.exec_remote_command(cmd)
     remote_SSH_host.ssh_close()
-
-def run_remote(args):
-    pass
 
 
 if __name__ == '__main__':
@@ -60,7 +59,6 @@ if __name__ == '__main__':
 
     func_map = {
         'checkDisk': check_disk,
-        'runCommand': run_remote
     }
 
     args = parse_args(func_map)
